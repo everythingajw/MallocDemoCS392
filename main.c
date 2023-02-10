@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #define OOM_EXIT_CODE 93
 #define NAMEOF(x) #x
@@ -170,12 +171,12 @@ void ObjectMallocDemo()
             "/-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----\\\n"
             "| 0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 | 0x8 | 0x9 | 0xA | 0xB | 0xC |\n"
             "|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|\n"
-            "|      p1->Field1       |      p1->Field2       |                       |\n"
-            "|                       |      p2->Field1       |      p2->Field2       |\n"
+            "|      p1->Field01      |      p1->Field02      |                       |\n"
+            "|                       |      p2->Field01      |      p2->Field02      |\n"
             "\\-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----/\n"
     );
-    printf("\np1->Field2 and p2->Field1 share the same memory.\n");
-    printf("Any changes to p1->Field2 are reflected in p2->Field1 and vice versa.\n");
+    printf("\np1->Field02 and p2->Field01 share the same memory.\n");
+    printf("Any changes to p1->Field02 are reflected in p2->Field01 and vice versa.\n");
 
     // Danger: p1 and p2 can't be trusted as pointers to
     // the actual memory we allocated with malloc. We have
@@ -185,6 +186,82 @@ void ObjectMallocDemo()
     memForObject = NULL;
     p1 = NULL;
     p2 = NULL;
+}
+
+struct GiantObject
+{
+    int64_t Field01;
+    int64_t Field02;
+    int64_t Field03;
+    int64_t Field04;
+    int64_t Field05;
+    int64_t Field06;
+    int64_t Field07;
+    int64_t Field08;
+    int64_t Field09;
+    int64_t Field10;
+    int64_t Field11;
+    int64_t Field12;
+    int64_t Field13;
+    int64_t Field14;
+    int64_t Field15;
+    int64_t Field16;
+    int64_t Field17;
+    int64_t Field18;
+    int64_t Field19;
+    int64_t Field20;
+};
+
+void GiantObjectDemo()
+{
+    const size_t bytesToAllocate = 2;
+    printf("Now let's see what happens if we take this to the extreme:\n");
+    printf("We'll only allocate %lu bytes for a %lu byte object.\n",
+           bytesToAllocate, sizeof(struct GiantObject));
+
+    struct GiantObject* p = (struct GiantObject*) malloc(bytesToAllocate);
+
+    // Make sure we get usable memory back.
+    if (p == NULL)
+    {
+        fprintf(stderr, "Out of memory.\n");
+        exit(OOM_EXIT_CODE);
+    }
+
+    printf("Now it's time for roulette. We're just going to write data to each field.\n");
+    printf("It might segfault, it might not. Consider yourself very lucky if it doesn't!\n\n");
+
+#define WRITE_TO_FIELD(field, value) { \
+    printf("Write data to " NAMEOF(p->field) "...\n"); \
+    p->field = value; }
+
+    WRITE_TO_FIELD(Field01, 0x12345678);
+    WRITE_TO_FIELD(Field02, 0xDEADBEEF);
+    WRITE_TO_FIELD(Field03, 0xBADF00D);
+    WRITE_TO_FIELD(Field04, 0xC0FFEE);
+    WRITE_TO_FIELD(Field05, 0xBADC0FFEE);
+    WRITE_TO_FIELD(Field06, 0xDABBAD00);  // Yabba dabba doo!
+    WRITE_TO_FIELD(Field07, 0xDEADDEAD);
+    WRITE_TO_FIELD(Field08, 0xFACEFEED);
+
+    // I don't really have any more fun things :(
+    WRITE_TO_FIELD(Field09, 0x89ABCDEF);
+    WRITE_TO_FIELD(Field10, 0x89ABCDEF);
+    WRITE_TO_FIELD(Field11, 0x89ABCDEF);
+    WRITE_TO_FIELD(Field12, 0x89ABCDEF);
+    WRITE_TO_FIELD(Field13, 0x89ABCDEF);
+    WRITE_TO_FIELD(Field14, 0x89ABCDEF);
+    WRITE_TO_FIELD(Field15, 0x89ABCDEF);
+    WRITE_TO_FIELD(Field16, 0x89ABCDEF);
+    WRITE_TO_FIELD(Field17, 0x89ABCDEF);
+    WRITE_TO_FIELD(Field18, 0x89ABCDEF);
+    WRITE_TO_FIELD(Field19, 0x89ABCDEF);
+    WRITE_TO_FIELD(Field20, 0x89ABCDEF);
+
+    printf("Congratulations! It didn't segfault!\n");
+
+    free(p);
+    p = NULL;
 }
 
 int main(int argc, char** argv)
@@ -199,6 +276,14 @@ int main(int argc, char** argv)
     // printf("\n====================================================\n\n");
 
     ObjectMallocDemo();
+
+    // We'll conditionally enable the "giant object" demo since it's very
+    // likely to segfault.
+    if (argc > 1 && strcmp(argv[1], "-g") == 0)
+    {
+        printf("\n====================================================\n\n");
+        GiantObjectDemo();
+    }
 
     return 0;
 }

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Werror
+CFLAGS = -Wall -Werror -O1
 OUT_DIR = ./build
 
 .PHONY: all build directories run clean
